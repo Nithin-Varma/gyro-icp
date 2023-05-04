@@ -31,6 +31,10 @@ import {
     Textarea,
   } from "@chakra-ui/react";
   import React, { useState } from "react";
+  import Axios from "axios"
+  import { Driver,User, Status, _SERVICE } from '.dfx/local/canisters/gyro/gyro.did';
+  import { useCanister, useClient, useConnect } from '@connect2ic/react';
+  import GyroConnectButton from '../../../components/button/ConnectButton';
   
   const testimonials = [
     {
@@ -139,6 +143,19 @@ import {
   const Form1 = () => {
     const [show, setShow] = React.useState(false);
     const handleClick = () => setShow(!show);
+
+    const [user, setUser] = useState<User>({
+      email: "",
+      firstName: "",
+      lastName: "",
+      mobileNumber: "",
+      status: { 'User': null } as Status
+    });
+    const { isConnected, principal } = useConnect()
+    console.log({ principal })
+    const [gyro, { error, loading, canisterDefinition }] = useCanister("gyro", {
+      mode: "anonymous"
+    })
     return (
       <>
         <Heading
@@ -156,9 +173,12 @@ import {
               First name
             </FormLabel>
             <Input
-              id="first-name"
-              placeholder="First name"
-              borderColor="gray.800"
+              value={user.firstName}
+              onChange={(e) => setUser({
+                ...user,
+                firstName: e.target.value
+              })}
+              type="text" placeholder="John" focusBorderColor='#ffff' borderColor="gray.800"
             />
           </FormControl>
   
@@ -167,9 +187,12 @@ import {
               Last name
             </FormLabel>
             <Input
-              id="last-name"
-              placeholder="First name"
-              borderColor="gray.800"
+              value={user.lastName}
+              onChange={(e) => setUser({
+                ...user,
+                lastName: e.target.value
+              })}
+              type="text" placeholder="Doe" borderColor="gray.800"
             />
           </FormControl>
         </Flex>
@@ -177,17 +200,33 @@ import {
           <FormLabel htmlFor="email" fontWeight="normal" color="gray.800">
             Email address
           </FormLabel>
-          <Input id="email" type="email" borderColor="gray.800" />
+          <Input 
+          value={user.email}
+          onChange={(e) => setUser({
+            ...user,
+            email: e.target.value
+          })}
+          type="email" placeholder="nithin@gmail.com" borderColor="gray.800"
+
+          />
         </FormControl>
   
         <FormControl mt="2%" color="gray.800">
           <FormLabel htmlFor="mobile" fontWeight="normal" color="gray.800">
             Phone Number
           </FormLabel>
-          <Input id="phone" type="number" borderColor="gray.800" />
+          <Input 
+          value = {user.mobileNumber}
+          onChange={(e) => setUser({
+            ...user,
+            mobileNumber: e.target.value
+          })}
+          type="number"
+          placeholder="XXXXXXXXXX"
+           borderColor="gray.800" />
         </FormControl>
   
-        <FormControl color="gray.800">
+        {/* <FormControl color="gray.800">
           <FormLabel
             htmlFor="password"
             fontWeight="normal"
@@ -209,7 +248,7 @@ import {
               </Button>
             </InputRightElement>
           </InputGroup>
-        </FormControl>
+        </FormControl> */}
       </>
     );
   };
@@ -251,7 +290,7 @@ import {
       </>
     );
   };
-  
+
   export default function DriverSignup() {
     const toast = useToast();
     const [step, setStep] = useState(1);
