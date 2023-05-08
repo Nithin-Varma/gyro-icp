@@ -39,7 +39,7 @@ import { Ride } from ".dfx/local/canisters/gyro/gyro.did";
 import { DistanceMatrix, Location } from "../../../../types"
 import { FARE } from "../../../../const";
 
-import { useConnect } from "@connect2ic/react";
+import { useCanister, useConnect } from "@connect2ic/react";
 
 
 const Route = () => {
@@ -56,6 +56,10 @@ const Route = () => {
 
 
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const [gyro] = useCanister("gyro", {
+    mode: "anonymous"
+  })
+
 
   function calcuateAndDisplayRoute(directionsService: google.maps.DirectionsService, directionsDisplay: google.maps.DirectionsRenderer, pointA: google.maps.LatLng, pointB: google.maps.LatLng) {
     directionsService.route({
@@ -69,6 +73,13 @@ const Route = () => {
         window.alert('Directions request failed due to ' + status);
       }
     });
+  }
+  const mapRef = useRef()
+  const confirmRide = () => {
+    setRide({
+      ...ride,
+
+    })
   }
 
   return (
@@ -201,9 +212,15 @@ const Route = () => {
               dropLocation.value.place_id
             );
 
+            onOpen()
 
-            const distanceRes = await fetch(`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${pickUpGeoDatas[0].formatted_address}&destinations=${dropGeoDatas[0].formatted_address}&key=AIzaSyBcf-4VVw3jUW0rBTGH8d4IWMhzxppEhKk`)
-            const distance: DistanceMatrix = await distanceRes.json()
+            const distance = await new google.maps.DistanceMatrixService().getDistanceMatrix(
+              {
+                origins: [pickUpGeoDatas[0].formatted_address],
+                destinations: [dropGeoDatas[0].formatted_address],
+                travelMode: google.maps.TravelMode.DRIVING
+              }
+            )
             const pointA = new google.maps.LatLng(
               pickUpGeoDatas[0].geometry.location.lat(),
               pickUpGeoDatas[0].geometry.location.lng()
@@ -216,7 +233,8 @@ const Route = () => {
               zoom: 7,
               center: pointA
             }
-            let map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions)
+            console.log(document.getElementById('map-canvas'), "canvas")
+            let map = new google.maps.Map(mapRef.current, mapOptions)
             let directionService = new google.maps.DirectionsService();
             let directionDisplay = new google.maps.DirectionsRenderer({ map: map })
             let fare = FARE;
@@ -238,25 +256,28 @@ const Route = () => {
               }
             })
             setLoadingData(false)
-            onOpen()
+
           }} isLoading={loadingData}>Search Car</Button>
+
           <Modal isOpen={isOpen} onClose={onClose}>
             <ModalOverlay />
             <ModalContent>
               <ModalHeader>Modal Title</ModalHeader>
               <ModalCloseButton />
               <ModalBody>
-                {ride ? <> <Text fontSize='2xl'> From {ride.pickUpLocation}</Text>
+
+                {ride ? <> <Text fontSize='xl'> From {ride.pickUpLocation}</Text>
                   <Center><Text fontSize={'3xl'}> To </Text></Center>
-                  <Text fontSize={'2xl'}>To {ride.dropLocation}</Text>
+                  <Text fontSize={'xl'}>To {ride.dropLocation}</Text>
                   <Text fontSize={'xl'}>
-                    With Distance {ride.distance.toString()}
+                    With Distance {ride.distance.toString()} kM {"  "}
                     And Fare <Text color={"red"}>{ride.fare.toString()} ICP </Text>
                   </Text>
-                  <div id="map-canvas" style={{
-                    width: "100px",
-                    height: "100px"
-                  }}></div></> : <Spinner size={"lg"} />}
+                </> : <Spinner size={"lg"} />}
+                <div id="map-canvas" ref={mapRef} style={{
+                  width: "100%",
+                  height: "300px"
+                }}></div>
 
               </ModalBody>
 
@@ -264,7 +285,7 @@ const Route = () => {
                 <Button colorScheme='blue' mr={3} onClick={onClose}>
                   Close
                 </Button>
-                <Button variant='ghost' color={"green"}>Confirm</Button>
+                <Button variant='ghost' color={"green"} onClick={confirmRide}>Confirm</Button>
               </ModalFooter>
             </ModalContent>
           </Modal>

@@ -24,7 +24,7 @@ actor {
         dropLocationCoordinates : Coordinates;
         distance : Nat;
         fare : Float;
-        user : ?Principal;
+        user : ?Text;
 
     };
     type Status = { #Driver; #User };
@@ -81,7 +81,7 @@ actor {
         drivers.put(caller, driver)
     };
 
-    public shared ({ caller }) func bookRide(ride : Ride) : async () {
+    public shared func bookRide(ride : Ride) : async () {
         usersRide := List.push(ride, usersRide)
     };
     public query ({ caller }) func getUserDetails() : async ?User {
